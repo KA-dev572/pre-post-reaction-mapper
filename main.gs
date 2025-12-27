@@ -2,7 +2,7 @@ function mainProcess(e) {
   //Googleフォームからの投稿に対し、dict記載の誤解されがちなワードを検知。
   //投稿内容を収集
   let content = e.namedValues; //連想配列形式, 値は文字列の配列からなる
-  // Logger.log(content);  //{メールアドレス=[YOUR_ADDRESS], タイムスタンプ=[2025/12/26 10:02:50], 投稿予定フォーム=[X(旧Twitter)], 投稿予定日=[2025/12/26], 投稿予定の内容=[クリスマストゥルース]}
+  // Logger.log(content);  //{メールアドレス=[YOUR_ADDRESS], タイムスタンプ=[yyyy/MM/dd HH:mm:SS] 投稿予定日=[yyyy/MM/dd], 投稿予定の内容=[TEXT]}
   //これを投げて適切にチェックできるように別関数を作って開発
 
   //ワードチェック
@@ -20,10 +20,9 @@ function wordCheck (eObj, fixedObj=dict) {
   //イベントで発生した連想配列と固定のdictを比較してチェック
   // eObj = {
   //   メールアドレス:["YOUR_ADDRESS"], 
-  //   タイムスタンプ:["2025/12/26 10:02:50"], 
-  //   投稿予定フォーム:["X(旧Twitter)"], 
-  //   投稿予定日:["2025/12/26"], 
-  //   投稿予定の内容:["クリスマストゥルース"]
+  //   タイムスタンプ:["yyyy/MM/dd HH:mm:SS"], 
+  //   投稿予定日:["yyyy/MM/dd"], 
+  //   投稿予定の内容:["TEXT"]
   // }; //実験用
   //返信先
   let to = eObj.メールアドレス[0];
@@ -38,7 +37,7 @@ function wordCheck (eObj, fixedObj=dict) {
     if (objText.includes(word)) { //含まれている場合
       let notes = []; //最後にbodyにまとめる
       if (fixedObj[word].axes.includes(1)) {  //1含意ありなら
-        if (fixedObj[word].dates.includes(objDate)) { //とりあえず、日付が同じなら→ほんとうは前後数日にしたいがあとまわし
+        if (fixedObj[word].dates.includes(objDate)) { //特定の日付に該当
           notes.push("この語は、特定の日付に発生した事件を想起させ、意図しない文脈で受け取られる可能性があります。");
         }
       }
@@ -62,10 +61,10 @@ function wordCheck (eObj, fixedObj=dict) {
 
 //3 投稿頻度に関するチェック
 function frequencyCheck(userId, word) {
-  //PropertiesServiceはgas内の永続ストレージ。なんかkey-valueという連想配列っぽい構造らしいが一個だけ？
+  //PropertiesServiceはgas内の永続ストレージ。なんかkey-valueという連想配列っぽい構造らしいが一個だけ
   const props = PropertiesService.getScriptProperties();  //その全体を取得
   const key = `FREQ::${userId}::${word}`; //keyを設定
-  const now = Date.now(); //時期を数値で→投稿時間のはなしなので、時間だけ比較しても仕方ない？
+  const now = Date.now(); //時期を数値で→厳密には投稿時間ではないので、連投の「可能性」のみ示唆
 
   const last = props.getProperty(key);  //ストレージから上記のキーに相当する値を取得
   props.setProperty(key, now.toString()); //該当ワードがあれば新しい時間帯を上書き
